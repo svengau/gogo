@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"strings"
 
+	"github.com/denisbrodbeck/machineid"
 	"github.com/fatih/color"
 	"github.com/goccy/go-yaml"
 )
@@ -62,6 +63,16 @@ func getConfigFilePath() string {
 	return ""
 }
 
+/*
+ * returns a 32 string used to encrypt user's password
+ */
+func getMachineID() string {
+	uuid64, err := machineid.ProtectedID("gogo")
+	failIf(err, "could not read machine id")
+
+	return uuid64[:32]
+}
+
 func getPasswordFilePath() string {
 	usr, err := user.Current()
 	failIf(err, "Could not get current user")
@@ -77,12 +88,15 @@ func getPassword() string {
 	gogoPasswdContent, err := ioutil.ReadFile(getPasswordFilePath())
 	failIf(err, "could not read "+gogoPasswd)
 
-	return string(gogoPasswdContent)
+	password := decryptString(string(gogoPasswdContent), getMachineID())
+
+	return password
 }
 
-func savePassword(input string) {
-	key32 := rpad(input, "x", 32)
-	bytes := []byte(key32)
+func savePassword(password string) {
+	password32 := rpad(password, "x", 32)
+	encryptedPassword32 := encryptString(string(password32), getMachineID())
+	bytes := []byte(encryptedPassword32)
 
 	gogopasswdFile := getPasswordFilePath()
 	if _, err := os.Stat(gogopasswdFile); err == nil {
