@@ -28,6 +28,7 @@ func usage() {
 		gogo [options] <env>
 
 	OPTIONS:
+		--init    create .gogo.yaml
 		--list    list variables
 		--encrypt  encrypt .gogo.yaml
 		--decrypt  decrypt .gogo.yaml
@@ -37,10 +38,14 @@ func usage() {
 		--help     show help (default: false)`)
 }
 
-func getConfigFilePath() string {
+func getCurrentDirConfigFilePath() string {
 	currentPath, err := os.Getwd()
 	failIf(err, "Could not get current folder")
-	currentGogoYaml := currentPath + "/" + gogoYaml
+	return currentPath + "/" + gogoYaml
+}
+
+func getConfigFilePath() string {
+	currentGogoYaml := getCurrentDirConfigFilePath()
 	if _, errStat := os.Stat(currentGogoYaml); errStat == nil {
 		return currentGogoYaml
 	}
@@ -153,6 +158,7 @@ func addToConfig(environment string, key string, value string) error {
 func main() {
 
 	var list bool
+	var init bool
 	var add bool
 	var encrypt bool
 	var decrypt bool
@@ -162,6 +168,7 @@ func main() {
 
 	f := flag.NewFlagSet("flag", flag.ContinueOnError)
 
+	f.BoolVar(&init, "init", false, "create .gogo.yaml")
 	f.BoolVar(&list, "list", false, "list vars in a given envs")
 	f.BoolVar(&add, "add", false, "add a var in a given env")
 	f.BoolVar(&encrypt, "encrypt", false, "encrypt "+gogoYaml)
@@ -203,6 +210,22 @@ func main() {
 		for varName, varValue := range config {
 			fmt.Println(color(" - " + varName + "=" + varValue))
 		}
+	} else if init {
+		if len(environment) == 0 {
+			environment = ask("Enter env name: ")
+		}
+		currentGogoYaml := getCurrentDirConfigFilePath()
+		if _, errStat := os.Stat(currentGogoYaml); errStat == nil {
+			fmt.Printf("~/%v already exists\n", currentGogoYaml)
+			return
+		}
+
+		bootstrapConfig := fmt.Sprintf("encrypted: false\nenvs:\n    %v:\n", environment)
+
+		ioutil.WriteFile(currentGogoYaml, []byte(bootstrapConfig), 0644)
+
+		fmt.Println(color(fmt.Sprintf(".gogo.yaml created with env %s\n", environment)))
+
 	} else if add {
 		if len(environment) == 0 {
 			environment = ask("Enter env name: ")
