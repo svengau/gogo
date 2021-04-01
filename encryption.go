@@ -22,7 +22,7 @@ func getAESGCM(keyString string) cipher.AEAD {
 	//Create a new Cipher Block from the key
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Fatal("An error occured while creating cipher. Error: ", err)
+		log.Fatal("An error occured while creating cipher with key %v. Error: ", keyString, err)
 	}
 
 	aesGCM, err := cipher.NewGCM(block)

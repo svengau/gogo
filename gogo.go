@@ -21,21 +21,20 @@ const gogoPasswd = ".gogopasswd"
 func usage() {
 	fmt.Println(`
 	NAME:
-	   gogo - a tool to run a command in a given environment
-	
+		gogo - a tool to run a command in a given environment
+
 	USAGE:
 		gogo <env> command [command arguments...]
 		gogo [options] <env>
-	
+
 	OPTIONS:
-	   --list     list variables
-	   --encrypt  encrypt .gogo.yaml
-	   --decrypt  decrypt .gogo.yaml
-	   --version  display version
-	   --dry      dry mode (default: false)
-	   --verbose  verbose mode (default: false)
-	   --help     show help (default: false)
-		`)
+		--list    list variables
+		--encrypt  encrypt .gogo.yaml
+		--decrypt  decrypt .gogo.yaml
+		--version  display version
+		--dry      dry mode (default: false)
+		--verbose  verbose mode (default: false)
+		--help     show help (default: false)`)
 }
 
 func getConfigFilePath() string {
@@ -54,7 +53,7 @@ func getConfigFilePath() string {
 		return homeGogoYaml
 	}
 
-	fmt.Printf("could not find any %v", gogoYaml)
+	fmt.Printf("could not find any %v\n", gogoYaml)
 	return ""
 }
 
@@ -66,6 +65,10 @@ func getPasswordFilePath() string {
 
 // return a 32 bites string
 func getPassword() string {
+	if _, err := os.Stat(getPasswordFilePath()); os.IsNotExist(err) {
+		return ""
+	}
+
 	gogoPasswdContent, err := ioutil.ReadFile(getPasswordFilePath())
 	failIf(err, "could not read "+gogoPasswd)
 
@@ -78,7 +81,7 @@ func savePassword(input string) {
 
 	gogopasswdFile := getPasswordFilePath()
 	if _, err := os.Stat(gogopasswdFile); err == nil {
-		fmt.Printf("~/%v already exists", gogoPasswd)
+		fmt.Printf("~/%v already exists\n", gogoPasswd)
 		return
 	}
 
@@ -128,6 +131,10 @@ func saveConfig(config Configugration) {
 func addToConfig(environment string, key string, value string) error {
 	config := getAllConfig()
 
+	if config.Envs[environment] == nil {
+		config.Envs[environment] = map[string]string{}
+	}
+
 	if config.Encrypted {
 		encryptionKey := getPassword()
 		config.Envs[environment][key] = encryptString(value, encryptionKey)
@@ -138,7 +145,7 @@ func addToConfig(environment string, key string, value string) error {
 	bytes, err := yaml.Marshal(config)
 	failIf(err, "could not marshal "+gogoYaml)
 
-	ioutil.WriteFile(getConfigFilePath(), bytes, 0)
+	ioutil.WriteFile(getConfigFilePath(), bytes, 0644)
 
 	return nil
 }
@@ -204,16 +211,16 @@ func main() {
 		varValue := ask("Enter variable value: ")
 
 		addToConfig(environment, varName, varValue)
-		fmt.Println(color(fmt.Sprintf("Var added to env %s: %s=%s", environment, varName, varValue)))
+		fmt.Println(color(fmt.Sprintf("Var added to env %s: %s=%s\n", environment, varName, varValue)))
 
 	} else if version {
-		fmt.Println("gogo", Version)
+		fmt.Println(Version)
 
 	} else if encrypt {
 		encryptionKey := getPassword()
 
 		if len(encryptionKey) == 0 {
-			input := ask("Enter password: ")
+			input := ask("Enter password (max. 32): ")
 			savePassword(input)
 			encryptionKey = getPassword()
 		}
@@ -232,21 +239,21 @@ func main() {
 		}
 
 		saveConfig(config)
-		fmt.Printf("%s", "Encryption done ✅")
+		fmt.Println("Encryption done ✅")
 
 	} else if decrypt {
+		config := getAllConfig()
+		if config.Encrypted == false {
+			fmt.Println("Already decrypted")
+			return
+		}
+
 		encryptionKey := getPassword()
 
 		if len(encryptionKey) == 0 {
 			input := ask("Enter password: ")
 			savePassword(input)
 			encryptionKey = getPassword()
-		}
-
-		config := getAllConfig()
-		if config.Encrypted == false {
-			fmt.Println("Already decrypted")
-			return
 		}
 
 		config.Encrypted = false
@@ -257,7 +264,7 @@ func main() {
 		}
 
 		saveConfig(config)
-		fmt.Println("Encryption done ✅")
+		fmt.Println("Decryption done ✅")
 
 	} else if environment != "" {
 		// run command
