@@ -34,6 +34,7 @@ distribute: build
 	@echo 'Build version $(VERSION)'
 	rm -rf dist/*
 	tar -czf dist/gogo-$(VERSION).tar.gz gogo
+	cp gogo dist/
 	# shasum is used to publish package with homebrew 
 	shasum -a 256 dist/gogo-$(VERSION).tar.gz
 
@@ -41,7 +42,7 @@ distribute: build
 
 release: distribute
 	@echo 'Release version $(VERSION)'
-	gh release create v$(VERSION) ./dist/*.tar.gz
+	gh release create v$(VERSION) ./dist/*
 
 .PHONY: release
 

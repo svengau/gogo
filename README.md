@@ -31,7 +31,7 @@ And last but not least, gogo can encrypt your file using AES.
 ### Manually
 
 ```
-curl -Lo /usr/local/bin/gogo https://github.com/svengau/gogo/releases/download/v0.0.1/gogo-darwin-amd64
+curl -Lo /usr/local/bin/gogo https://github.com/svengau/gogo/releases/download/v0.1.0/gogo
 chmod +x /usr/local/bin/gogo
 ```
 
