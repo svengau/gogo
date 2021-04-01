@@ -1,11 +1,13 @@
 SHELL := /bin/bash
 
-VERSION=0.1.1
-GO_FILES=gogo.go encryption.go helpers.go version.go
+GO_FILES = gogo.go encryption.go helpers.go version.go
+
+VERSION = $(shell ./gogo --version)
 
 all: help
 
 .PHONY: all
+
 
 build:
 	rm -rf gogo
@@ -18,6 +20,7 @@ build:
 
 .PHONY: build
 
+
 install:
 	rm -rf gogo
 
@@ -26,12 +29,28 @@ install:
 
 .PHONY: install
 
+
+distribute: build
+	@echo 'Build version $(VERSION)'
+	rm -rf dist/*
+	tar -czf dist/gogo-$(VERSION).tar.gz gogo
+
+.PHONY: distribute
+
+release: distribute
+	@echo 'Release version $(VERSION)'
+	gh release create v$(VERSION) ./dist/*.tar.gz
+
+.PHONY: release
+
+
 help:
 
 	@echo 'Usage: make [TARGET]'
 	@echo
 	@echo '    make build         build gogo'
 	@echo '    make install       install deps'
+	@echo '    make distribute    build dist'
 	@echo
 
 .PHONY: help
