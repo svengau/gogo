@@ -200,7 +200,7 @@ func main() {
 	}
 
 	args := os.Args[1:]
-	color := color.New(color.FgHiBlack).SprintFunc()
+	colorInfo := color.New(color.FgHiBlack).SprintFunc()
 	var environment string
 
 	if indexEnv > 0 {
@@ -222,7 +222,7 @@ func main() {
 		config, _ := getConfig(environment)
 
 		for varName, varValue := range config {
-			fmt.Println(color(" - " + varName + "=" + varValue))
+			fmt.Println(colorInfo(" - " + varName + "=" + varValue))
 		}
 	} else if init {
 		if len(environment) == 0 {
@@ -238,7 +238,7 @@ func main() {
 
 		ioutil.WriteFile(currentGogoYaml, []byte(bootstrapConfig), 0644)
 
-		fmt.Println(color(fmt.Sprintf(".gogo.yaml created with env %s\n", environment)))
+		fmt.Println(colorInfo(fmt.Sprintf(".gogo.yaml created with env %s\n", environment)))
 
 	} else if add {
 		if len(environment) == 0 {
@@ -248,7 +248,7 @@ func main() {
 		varValue := ask("Enter variable value: ")
 
 		addToConfig(environment, varName, varValue)
-		fmt.Println(color(fmt.Sprintf("Var added to env %s: %s=%s\n", environment, varName, varValue)))
+		fmt.Println(colorInfo(fmt.Sprintf("Var added to env %s: %s=%s\n", environment, varName, varValue)))
 
 	} else if version {
 		fmt.Println(Version)
@@ -306,7 +306,7 @@ func main() {
 	} else if environment != "" {
 		// run command
 		if verbose {
-			fmt.Println(color("env: " + environment))
+			fmt.Println(colorInfo("env: " + environment))
 		}
 		config, _ := getConfig(environment)
 
@@ -314,7 +314,7 @@ func main() {
 
 		for key, name := range config {
 			if verbose {
-				fmt.Println(color(" - inject " + key + "=" + name))
+				fmt.Println(colorInfo(" - inject " + key + "=" + name))
 			}
 			for i := 0; i < len(cmdArray); i++ {
 				cmdArray[i] = strings.ReplaceAll(cmdArray[i], "$"+key, name)
@@ -328,7 +328,7 @@ func main() {
 
 		cmd := exec.Command(command, arguments...)
 		if verbose {
-			fmt.Println(color(cmd))
+			fmt.Println(colorInfo(cmd))
 		}
 
 		cmd.Env = os.Environ()
@@ -338,12 +338,20 @@ func main() {
 		}
 
 		stdout, _ := cmd.StdoutPipe()
+		stderr, _ := cmd.StderrPipe()
 		cmd.Start()
 
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			m := scanner.Text()
+		scannerOut := bufio.NewScanner(stdout)
+		for scannerOut.Scan() {
+			m := scannerOut.Text()
 			fmt.Println(m)
+		}
+
+		scannerErr := bufio.NewScanner(stderr)
+		colorError := color.New(color.FgRed).SprintFunc()
+		for scannerErr.Scan() {
+			m := scannerErr.Text()
+			fmt.Println(colorError(m))
 		}
 
 		cmd.Wait()
